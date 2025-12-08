@@ -23,7 +23,7 @@ export async function postProcessTranscript(transcript: string) {
     if (!config.geminiApiKey) throw new Error("Gemini API key is required")
 
     const gai = new GoogleGenerativeAI(config.geminiApiKey)
-    const gModel = gai.getGenerativeModel({ model: "gemini-1.5-flash-002" })
+    const gModel = gai.getGenerativeModel({ model: "gemini-flash-lite-latest" })
 
     const result = await gModel.generateContent([prompt], {
       baseUrl: config.geminiBaseUrl,

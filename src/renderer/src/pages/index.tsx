@@ -142,6 +142,8 @@ export function Component() {
                         <div className="flex shrink-0 gap-2 text-sm">
                           <PlayButton id={item.id} />
 
+                          <CopyButton transcript={item.transcript} />
+
                           <DeleteButton id={item.id} />
                         </div>
                       </div>
@@ -210,6 +212,43 @@ const PlayButton = ({ id }: { id: string }) => {
         )}
       ></span>
     </button>
+  )
+}
+
+const CopyButton = ({ transcript }: { transcript: string }) => {
+  const [copied, setCopied] = useState(false)
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(transcript)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)  // Reset após 2s
+    } catch (error) {
+      console.error('Falha ao copiar:', error)
+    }
+  }
+
+  return (
+    <TooltipProvider>
+      <Tooltip delayDuration={0}>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            className={itemButtonVariants()}
+            onClick={handleCopy}
+          >
+            <span
+              className={cn(
+                copied ? "i-mingcute-check-fill text-green-500" : "i-mingcute-copy-2-line"
+              )}
+            ></span>
+          </button>
+        </TooltipTrigger>
+        <TooltipContent>
+          {copied ? "Copiado!" : "Copiar texto"}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   )
 }
 

@@ -1,11 +1,11 @@
 {
-  "name": "whispo",
-  "version": "0.1.7",
+  "name": "juris-transcritor",
+  "version": "1.1.0",
   "type": "module",
-  "description": "AI powered dictation",
+  "description": "AI-powered dictation for legal professionals",
   "main": "./out/main/index.js",
-  "author": "whispo.app",
-  "homepage": "https://whispo.app",
+  "author": "Juris Transcritor",
+  "homepage": "https://github.com/dwflowmusic-rgb/whispo-vg",
   "scripts": {
     "format": "prettier --write .",
     "lint": "eslint . --ext .js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix",

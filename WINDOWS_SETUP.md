@@ -272,36 +272,6 @@ cd ..\..\..\..
 
 ```powershell
 # Update Desktop shortcut to point to .vbs file
-.\whispo-silencioso.vbs
-```
-
----
-
-### 6. Transcription Not Working
-
-**Check these in order:**
-
-1. **API Key Configured?**
-   - Settings → Providers → Check API key present
-   - Settings → General → Provider selected
-
-2. **Internet Connection?**
-   - Test: <https://api.groq.com/openai/v1/models>
-   - Corporate firewalls may block API calls
-
-3. **Microphone Permission?**
-   - Windows Settings → Privacy → Microphone
-   - Allow desktop apps
-
-4. **Check History:**
-   - In-app: History tab
-   - See if recording was captured but failed transcription
-
----
-
-### 7. Path Contains Special Characters
-
-**Problem:** Various build/installation issues
 
 **Long-term Solution:**
 

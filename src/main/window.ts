@@ -71,12 +71,14 @@ function createBaseWindow({
   return win
 }
 
-export function createMainWindow({ url }: { url?: string } = {}) {
+export function createMainWindow({ url, showOnStartup = true }: { url?: string; showOnStartup?: boolean } = {}) {
   const win = createBaseWindow({
     id: "main",
     url,
+    showWhenReady: showOnStartup,
     windowOptions: {
       titleBarStyle: "hiddenInset",
+      title: "Juris Transcritor",
     },
   })
 

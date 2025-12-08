@@ -74,6 +74,8 @@ export const initTray = () => {
     tray.popUpContextMenu(buildMenu(tray))
   })
 
+  tray.setToolTip("Juris Transcritor")  // Tooltip ao passar mouse
+
   tray.on("right-click", () => {
     tray.popUpContextMenu(buildMenu(tray))
   })
