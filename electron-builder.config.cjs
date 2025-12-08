@@ -2,8 +2,8 @@
 
 /** @type {import('electron-builder').Configuration} */
 module.exports = {
-  appId: "app.whispo",
-  productName: "Whispo",
+  appId: "com.juristranscritor.app",
+  productName: "Juris Transcritor",
   directories: {
     buildResources: "build",
   },
@@ -54,8 +54,8 @@ module.exports = {
     ],
     notarize: process.env.APPLE_TEAM_ID
       ? {
-          teamId: process.env.APPLE_TEAM_ID,
-        }
+        teamId: process.env.APPLE_TEAM_ID,
+      }
       : undefined,
   },
   dmg: {

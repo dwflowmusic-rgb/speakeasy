@@ -17,9 +17,36 @@ import { isAccessibilityGranted } from "./utils"
 
 registerServeSchema()
 
+// ============================================================
+// SINGLE INSTANCE LOCK - Previne múltiplas instâncias
+// ============================================================
+const gotTheLock = app.requestSingleInstanceLock()
+
+if (!gotTheLock) {
+  // Já existe outra instância rodando - sai imediatamente
+  console.log("[STARTUP] Another instance is already running, quitting...")
+  app.quit()
+} else {
+  // Primeira instância - Handle caso usuário tente abrir de novo
+  app.on('second-instance', (event, commandLine, workingDirectory) => {
+    console.log("[SECOND-INSTANCE] User tried to open app again, focusing existing window")
+
+    // Foca na janela principal se ela existir
+    const mainWindow = WINDOWS.get("main")
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) {
+        mainWindow.restore()
+      }
+      mainWindow.show()
+      mainWindow.focus()
+    }
+  })
+}
+
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
+console.time("[STARTUP] Total app initialization")
 app.whenReady().then(() => {
   // Set app user model id for windows
   electronApp.setAppUserModelId(process.env.APP_ID)
@@ -32,19 +59,46 @@ app.whenReady().then(() => {
 
   registerServeProtocol()
 
+  console.time("[STARTUP] Creating main window")
   if (accessibilityGranted) {
-    createMainWindow()
+    createMainWindow({ showOnStartup: false })  // Inicia apenas na bandeja
   } else {
     createSetupWindow()
   }
+  console.timeEnd("[STARTUP] Creating main window")
 
+  console.time("[STARTUP] Creating panel window")
   createPanelWindow()
+  console.timeEnd("[STARTUP] Creating panel window")
 
-  listenToKeyboardEvents()
+  // ============================================================
+  // LAZY LOADING - Carrega módulos pesados DEPOIS do startup
+  // Executa após o event loop liberar (não bloqueia UI)
+  // ============================================================
+  setImmediate(() => {
+    console.time("[STARTUP] Loading keyboard events")
+    listenToKeyboardEvents()
+    console.timeEnd("[STARTUP] Loading keyboard events")
+  })
 
-  initTray()
+  setImmediate(() => {
+    console.time("[STARTUP] Loading tray")
+    initTray()
+    console.timeEnd("[STARTUP] Loading tray")
+  })
 
-  import("./updater").then((res) => res.init()).catch(console.error)
+  setImmediate(() => {
+    console.time("[STARTUP] Loading updater")
+    import("./updater").then((res) => {
+      res.init()
+      console.timeEnd("[STARTUP] Loading updater")
+    }).catch((err) => {
+      console.error("[STARTUP] Updater failed:", err)
+    })
+  })
+
+  // Marca final do startup - tudo carregado
+  console.timeEnd("[STARTUP] Total app initialization")
 
   // Default open or close DevTools by F12 in development
   // and ignore CommandOrControl + R in production.
