@@ -17,7 +17,9 @@ export function createSplashWindow() {
         },
     })
 
-    const splashPath = path.join(__dirname, "../../resources/splash.html")
+    const splashPath = path
+        .join(__dirname, "../../resources/splash.html")
+        .replace("app.asar", "app.asar.unpacked")
     splashWindow.loadFile(splashPath)
 
     return splashWindow
