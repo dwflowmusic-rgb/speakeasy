@@ -179,6 +179,8 @@ export function createPanelWindow() {
     },
   })
 
+  win.setAlwaysOnTop(true, "screen-saver")
+
   win.on("hide", () => {
     getRendererHandlers<RendererHandlers>(win.webContents).stopRecording.send()
   })
@@ -194,6 +196,7 @@ export function showPanelWindow() {
     const position = getPanelWindowPosition()
     win.setPosition(position.x, position.y)
     win.showInactive()
+    win.setAlwaysOnTop(true, "screen-saver")
     makeKeyWindow(win)
   }
 }
