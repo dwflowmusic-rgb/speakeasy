@@ -125,17 +125,18 @@ export function Component() {
             <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Modelo</label>
             <select
               className="flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1"
-              defaultValue={configQuery.data.geminiModel || "gemini-flash-lite-latest"}
+              title="Selecione o modelo Gemini"
+              defaultValue={configQuery.data.geminiModel || "models/gemini-flash-lite-latest"}
               onChange={(e) => {
                 saveConfig({
                   geminiModel: e.currentTarget.value,
                 })
               }}
             >
-              <option value="gemini-flash-lite-latest">Flash Lite 2.5 (Rápido/Padrão)</option>
-              <option value="gemini-1.5-flash-latest">Flash 1.5 (Equilibrado)</option>
-              <option value="gemini-1.5-pro-latest">Pro 1.5 (Avançado/Técnico)</option>
-              <option value="gemini-2.0-flash-exp">Flash 2.0 (Experimental)</option>
+              <option value="models/gemini-flash-lite-latest">Flash Lite (Rápido/Barato)</option>
+              <option value="models/gemini-flash-latest">Flash (Equilibrado/Padrão)</option>
+              <option value="models/gemini-2.5-pro">Pro 2.5 (Avançado)</option>
+              <option value="models/gemini-3-pro-preview">Pro 3.0 Preview (Mais Avançado)</option>
             </select>
           </div>
         </div>
