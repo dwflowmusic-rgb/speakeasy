@@ -131,4 +131,10 @@ fn main() {
         let mut enigo = Enigo::new(&Settings::default()).unwrap();
         let _ = enigo.key(Key::CapsLock, Direction::Click);
     }
+
+    if args.len() > 1 && args[1] == "press-enter" {
+        use enigo::{Direction, Enigo, Key, Keyboard, Settings};
+        let mut enigo = Enigo::new(&Settings::default()).unwrap();
+        let _ = enigo.key(Key::Return, Direction::Click);
+    }
 }

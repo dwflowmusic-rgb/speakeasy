@@ -117,6 +117,19 @@ export function Component() {
         </Control>
       </ControlGroup>
 
+      <ControlGroup title="Behavior">
+        <Control label="Auto-Enter" description="Automatically press Enter after typing">
+          <Switch
+            defaultChecked={configQuery.data.autoEnter}
+            onCheckedChange={(value) => {
+              saveConfig({
+                autoEnter: value,
+              })
+            }}
+          />
+        </Control>
+      </ControlGroup>
+
       <ControlGroup title="Speech to Text">
         <Control label="Provider" className="px-3">
           <Select

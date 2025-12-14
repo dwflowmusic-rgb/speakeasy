@@ -6,7 +6,7 @@ import { useMutation } from "@tanstack/react-query"
 import { useEffect, useRef, useState } from "react"
 import { rendererHandlers, tipcClient } from "~/lib/tipc-client"
 
-const VISUALIZER_BUFFER_LENGTH = 70
+const VISUALIZER_BUFFER_LENGTH = 16
 
 const getInitialVisualizerData = () =>
   Array<number>(VISUALIZER_BUFFER_LENGTH).fill(-1000)
@@ -127,32 +127,30 @@ export function Component() {
           <Spinner />
         </div>
       ) : (
-        <div className="flex h-full w-full rounded-xl transition-colors">
-          <div className="flex shrink-0"></div>
-          <div
-            className="relative flex grow items-center overflow-hidden"
-            dir="rtl"
-          >
-            <div className="absolute right-0 flex h-6 items-center gap-0.5">
-              {visualizerData
-                .slice()
-                .reverse()
-                .map((rms, index) => {
-                  return (
-                    <div
-                      key={index}
-                      className={cn(
-                        "h-full w-0.5 shrink-0 rounded-lg",
-                        "bg-red-500 dark:bg-white",
-                        rms === -1000 && "bg-neutral-400 dark:bg-neutral-500",
-                      )}
-                      style={{
-                        height: `${Math.min(100, Math.max(16, rms * 100))}%`,
-                      }}
-                    />
-                  )
-                })}
-            </div>
+        <div
+          className={cn(
+            "flex h-full w-full items-center justify-center overflow-hidden rounded-full border-4 border-white/10 bg-gradient-to-br from-cyan-500/90 via-blue-600/90 to-purple-600/90 shadow-[0_0_30px_rgba(6,182,212,0.5)] backdrop-blur-xl transition-all duration-300",
+            recording && "animate-pulse ring-4 ring-cyan-400/50 shadow-[0_0_50px_rgba(34,211,238,0.8)]",
+          )}
+        >
+          <div className="flex h-12 items-center gap-0.5" dir="rtl">
+            {visualizerData
+              .slice()
+              .reverse()
+              .map((rms, index) => {
+                return (
+                  <div
+                    key={index}
+                    className={cn(
+                      "w-1 shrink-0 rounded-full bg-white/90 shadow-[0_0_10px_rgba(255,255,255,0.8)] transition-all duration-75",
+                      rms === -1000 && "bg-white/20 shadow-none h-1",
+                    )}
+                    style={{
+                      height: `${Math.min(100, Math.max(16, rms * 100))}%`,
+                    }}
+                  />
+                )
+              })}
           </div>
         </div>
       )}

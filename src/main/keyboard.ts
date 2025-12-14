@@ -64,6 +64,13 @@ const simulateCapsLockToggle = () => {
   })
 }
 
+export const pressEnter = () => {
+  return new Promise<void>((resolve) => {
+    const child = spawn(rdevPath, ["press-enter"])
+    child.on("close", () => resolve())
+  })
+}
+
 const parseEvent = (event: any) => {
   try {
     const e = JSON.parse(String(event))

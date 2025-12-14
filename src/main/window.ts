@@ -129,8 +129,8 @@ export function showMainWindow(url?: string) {
 }
 
 const panelWindowSize = {
-  width: 260,
-  height: 50,
+  width: 80,
+  height: 80,
 }
 
 const getPanelWindowPosition = () => {
@@ -165,17 +165,19 @@ export function createPanelWindow() {
       // transparent: true,
       paintWhenInitiallyHidden: true,
       // hasShadow: false,
-      width: panelWindowSize.width,
-      height: panelWindowSize.height,
-      maxWidth: panelWindowSize.width,
-      maxHeight: panelWindowSize.height,
-      minWidth: panelWindowSize.width,
-      minHeight: panelWindowSize.height,
+      width: 80,
+      height: 80,
+      maxWidth: 80,
+      maxHeight: 80,
+      minWidth: 80,
+      minHeight: 80,
       visualEffectState: "active",
       vibrancy: "under-window",
       alwaysOnTop: true,
       x: position.x,
       y: position.y,
+      transparent: true,
+      hasShadow: false,
     },
   })
 

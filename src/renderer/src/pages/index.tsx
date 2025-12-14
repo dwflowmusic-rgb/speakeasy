@@ -70,14 +70,19 @@ export function Component() {
 
   return (
     <>
-      <header className="app-drag-region flex h-12 shrink-0 items-center justify-between border-b px-4 text-sm">
-        <span className="font-bold">History</span>
+      <header className="app-drag-region flex h-14 shrink-0 items-center justify-between border-b border-white/10 bg-black/20 px-6 backdrop-blur-md">
+        <div className="flex items-center gap-2">
+          <div className="h-3 w-3 rounded-full bg-cyan-500 shadow-[0_0_10px_rgba(6,182,212,0.8)]"></div>
+          <span className="font-bold tracking-tight text-lg text-white">SpeakEasy</span>
+        </div>
 
         <div className="flex">
           <Input
-            wrapperClassName="dark:bg-transparent"
+            wrapperClassName="dark:bg-white/5 border-white/10 focus-within:ring-cyan-500/50"
+            className="text-sm"
+            placeholder="Search recordings..."
             endContent={
-              <span className="i-mingcute-search-2-line text-muted-foreground"></span>
+              <span className="i-mingcute-search-2-line text-neutral-400"></span>
             }
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
@@ -86,14 +91,17 @@ export function Component() {
       </header>
 
       {historyGroupsByDate.length === 0 ? (
-        <div className="flex grow flex-col items-center justify-center gap-2 text-center font-semibold leading-none">
-          <span className="mx-auto max-w-md text-2xl text-muted-foreground">
+        <div className="flex grow flex-col items-center justify-center gap-4 text-center font-medium leading-none">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/5 shadow-inner">
+            <span className="i-mingcute-mic-line text-3xl text-neutral-600"></span>
+          </div>
+          <span className="mx-auto max-w-md text-xl text-neutral-400">
             No Recordings {keyword ? `For ${JSON.stringify(keyword)}` : ""}
           </span>
           {!keyword && (
-            <span className="text-sm text-muted-foreground">
+            <span className="text-sm text-neutral-600">
               Hold{" "}
-              <span className="inline-flex h-6 items-center rounded-lg border p-1 text-sm dark:border-neutral-700 dark:bg-neutral-800">
+              <span className="inline-flex h-6 items-center rounded border border-neutral-700 bg-neutral-800 px-1.5 font-mono text-xs text-neutral-300">
                 Ctrl
               </span>{" "}
               to record
@@ -101,8 +109,8 @@ export function Component() {
           )}
         </div>
       ) : (
-        <div className="grow overflow-auto px-8 py-8">
-          <div className="grid gap-5">
+        <div className="grow overflow-auto px-6 py-6 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/10 hover:scrollbar-thumb-white/20">
+          <div className="grid gap-6">
             {historyGroupsByDate.map((group) => {
               return (
                 <ControlGroup
@@ -114,41 +122,44 @@ export function Component() {
                         ? "Yesterday"
                         : group.date
                   }
+                  className="text-cyan-400"
                 >
-                  {group.items.map((item) => {
-                    return (
-                      <div
-                        key={item.id}
-                        className="flex items-center justify-between gap-5 p-4"
-                      >
-                        <TooltipProvider>
-                          <Tooltip delayDuration={0} disableHoverableContent>
-                            <TooltipTrigger asChild>
-                              <span className="inline-flex h-5 shrink-0 cursor-default items-center justify-center rounded bg-neutral-100 px-1 text-xs text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400">
-                                {dayjs(item.createdAt).format("HH:mm")}
-                              </span>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              Recorded at{" "}
-                              {dayjs(item.createdAt).format(
-                                "ddd, MMM D, YYYY h:mm A",
-                              )}
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                        <div className="grow select-text">
-                          {item.transcript}
-                        </div>
-                        <div className="flex shrink-0 gap-2 text-sm">
-                          <PlayButton id={item.id} />
+                  <div className="flex flex-col gap-2">
+                    {group.items.map((item) => {
+                      return (
+                        <div
+                          key={item.id}
+                          className="group flex items-center justify-between gap-4 rounded-xl border border-white/5 bg-white/5 p-4 transition-all hover:bg-white/10 hover:border-white/10 hover:shadow-lg hover:shadow-cyan-900/10"
+                        >
+                          <TooltipProvider>
+                            <Tooltip delayDuration={0} disableHoverableContent>
+                              <TooltipTrigger asChild>
+                                <span className="inline-flex h-6 shrink-0 cursor-default items-center justify-center rounded-md bg-black/40 px-2 text-xs font-medium text-neutral-400 group-hover:text-cyan-200 transition-colors">
+                                  {dayjs(item.createdAt).format("HH:mm")}
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent side="right" className="bg-neutral-900 border-neutral-800 text-neutral-300">
+                                Recorded at{" "}
+                                {dayjs(item.createdAt).format(
+                                  "ddd, MMM D, YYYY h:mm A",
+                                )}
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                          <div className="grow select-text text-neutral-300 group-hover:text-white transition-colors line-clamp-2">
+                            {item.transcript}
+                          </div>
+                          <div className="flex shrink-0 gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
+                            <PlayButton id={item.id} />
 
-                          <CopyButton transcript={item.transcript} />
+                            <CopyButton transcript={item.transcript} />
 
-                          <DeleteButton id={item.id} />
+                            <DeleteButton id={item.id} />
+                          </div>
                         </div>
-                      </div>
-                    )
-                  })}
+                      )
+                    })}
+                  </div>
                 </ControlGroup>
               )
             })}

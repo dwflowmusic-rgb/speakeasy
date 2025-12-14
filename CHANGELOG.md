@@ -1,24 +1,5 @@
 # Changelog
 
-## [1.2.1] - 2025-12-11
-
-### Adicionado
-
-- **Splash Screen:** Nova tela de carregamento visual ao iniciar o aplicativo.
-- **Ajuda Contextual:** Botões de ajuda (?) nas configurações para guiar a criação de API Keys.
-- **Manual do Usuário:** Documentação completa (MANUAL_DO_USUARIO.md) para usuários não técnicos.
-- **Seleção de Modelo:** Opção para escolher entre modelos Gemini (Flash Lite, Pro, etc.).
-
-### Corrigido
-
-- **Alucinação:** Removida definitivamente a frase "como base" e textos indesejados no final das transcrições.
-- **Performance:** Remoção de lógica de foco complexa ("teimosa") para maior leveza e estabilidade.
-- **Instalador:** Correções no processo de build para gerar executável standalone estável.
-
-### Alterado
-
-- Otimização do tempo de inicialização com carregamento preguiçoso de módulos.
-
 All notable changes to Juris Transcritor (formerly Whispo Windows) will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).

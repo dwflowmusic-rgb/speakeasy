@@ -222,6 +222,10 @@ export const router = {
       clipboard.writeText(transcript)
       if (isAccessibilityGranted()) {
         await writeText(transcript)
+        if (config.autoEnter) {
+          const { pressEnter } = await import("./keyboard")
+          await pressEnter()
+        }
       }
     }),
 
