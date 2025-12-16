@@ -1,8 +1,26 @@
 # Changelog
 
-All notable changes to Juris Transcritor (formerly Whispo Windows) will be documented in this file.
+Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
+## [1.5.0] - 2025-12-16
+
+### Adicionado
+
+- **Orb UI:** Nova interface de gravação circular, flutuante e transparente com animações de pulso e visualizador de áudio circular.
+- **Personas:** Sistema de seleção de contexto (Lawyer, Dev, Casual, ADHD) que adapta o prompt do LLM para o estilo desejado.
+- **Timer:** Cronômetro digital integrado ao centro do Orbe.
+- **Regra dos 10s:** Validação que descarta gravações menores que 10 segundos para economizar API e incentivar digitação em comandos curtos.
+
+### Alterado
+
+- Backend (`llm.ts`) atualizado para injetar system prompts dinâmicos baseados na persona.
+- Janela do Painel (`window.ts`) reconfigurada para 200x200px com suporte a transparência real (`transparent: true`).
+
+### Corrigido
+
+- **LLM Prompt:** Adicionado placeholder `{transcript}` nas personas para corrigir alucinações onde a IA apenas repetia o prompt.
+- **UI:** Aprimoramentos visuais no Orb (sem pulsação em idle/rec, cores unificadas Laranja).
+- **Settings:** Seletor de Persona movido para Configurações Gerais para maior flexibilidade.
 
 ## [1.4.0] - 2025-12-14
 

@@ -1,6 +1,6 @@
 {
   "name": "juris-transcritor",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "type": "module",
   "description": "AI-powered dictation for legal professionals",
   "main": "./out/main/index.js",

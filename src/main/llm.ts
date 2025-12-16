@@ -1,9 +1,10 @@
 import { dialog } from "electron"
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import { configStore } from "./config"
+import { PERSONA_PROMPTS, PersonaKey } from "../shared/personas"
 
-// System prompt that tells LLM to return ONLY the corrected text
-const SYSTEM_INSTRUCTION = `Você é um assistente de correção de texto em português do Brasil.
+// System prompt default (fallback)
+const DEFAULT_SYSTEM_INSTRUCTION = `Você é um assistente de correção de texto em português do Brasil.
 Sua única tarefa é corrigir o texto fornecido e retorná-lo.
 REGRAS IMPORTANTES:
 1. Retorne APENAS o texto corrigido
@@ -41,22 +42,39 @@ function cleanLLMResponse(response: string): string {
   return cleaned.trim()
 }
 
-export async function postProcessTranscript(transcript: string) {
+export async function postProcessTranscript(transcript: string, persona?: PersonaKey) {
   const config = configStore.get()
 
   if (
-    !config.transcriptPostProcessingEnabled ||
-    !config.transcriptPostProcessingPrompt
+    !config.transcriptPostProcessingEnabled && !persona
   ) {
-    return transcript
+    // Se não tiver persona E processamento estiver desabilitado, retorna original.
+    // Se tiver persona, força o processamento mesmo se o toggle global estiver off?
+    // O usuário disse que seleciona a persona para gravar. Isso implica que quer processamento.
+    // Mas vamos respeitar o toggle global por segurança, ou assumir que persona ativada = processamento ativado.
+    // Pela descrição, persona muda o "chapéu" do prompt. Se selecionou persona, quer processar.
+    if (!persona) return transcript
   }
 
-  const userPrompt = config.transcriptPostProcessingPrompt.replace(
-    "{transcript}",
-    transcript,
-  )
+  // Se tiver config desligada mas persona passada, vamos assumir que o usuário quer processar?
+  // User Prompt Logic:
+  // Se tem persona, o User Prompt é apenas a transcrição (System Prompt dita as regras).
+  // Se não tem persona, usa o prompt customizado do config (com placeholder).
 
-  const chatProviderId = config.transcriptPostProcessingProviderId
+  let userPrompt = transcript
+  let systemInstruction = DEFAULT_SYSTEM_INSTRUCTION
+
+  if (persona) {
+    systemInstruction = PERSONA_PROMPTS[persona]
+    // userPrompt continua sendo apenas o transcript, limpo.
+  } else if (config.transcriptPostProcessingPrompt) {
+    userPrompt = config.transcriptPostProcessingPrompt.replace(
+      "{transcript}",
+      transcript,
+    )
+  }
+
+  const chatProviderId = config.transcriptPostProcessingProviderId || "gemini" // Default fallback
 
   try {
     if (chatProviderId === "gemini") {
@@ -70,7 +88,7 @@ export async function postProcessTranscript(transcript: string) {
 
       const gModel = gai.getGenerativeModel({
         model: modelName,
-        systemInstruction: SYSTEM_INSTRUCTION,
+        systemInstruction: systemInstruction,
       })
 
       const result = await gModel.generateContent([userPrompt], {
@@ -99,7 +117,7 @@ export async function postProcessTranscript(transcript: string) {
         messages: [
           {
             role: "system",
-            content: SYSTEM_INSTRUCTION,
+            content: systemInstruction,
           },
           {
             role: "user",

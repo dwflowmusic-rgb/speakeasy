@@ -18,6 +18,7 @@ import { state } from "./state"
 import { updateTrayIcon } from "./tray"
 import { isAccessibilityGranted } from "./utils"
 import { writeText } from "./keyboard"
+import { PERSONA_PROMPTS, PersonaKey } from "../shared/personas"
 
 const t = tipc.create()
 
@@ -189,6 +190,7 @@ export const router = {
       }
 
       const json: { text: string } = await transcriptResponse.json()
+      // Use standard configuration prompt (no dynamic persona injection here)
       const transcript = await postProcessTranscript(json.text)
 
       const history = getRecordingHistory()

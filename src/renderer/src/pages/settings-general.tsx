@@ -191,6 +191,26 @@ export function Component() {
               </Select>
             </Control>
 
+            <Control label="Template" description="Aplicar prompt predefinido" className="px-3">
+              <Select onValueChange={(val) => {
+                // @ts-ignore - Dynamic import handled via relative path or alias
+                import("../../../shared/personas").then(({ PERSONA_PROMPTS }) => {
+                  const prompt = PERSONA_PROMPTS[val]
+                  if (prompt) {
+                    saveConfig({ transcriptPostProcessingPrompt: prompt })
+                  }
+                })
+              }}>
+                <SelectTrigger><SelectValue placeholder="Selecione um modelo..." /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="LAWYER">Advogado (Formal)</SelectItem>
+                  <SelectItem value="DEV">Desenvolvedor (Técnico)</SelectItem>
+                  <SelectItem value="CASUAL">Casual (Conversa)</SelectItem>
+                  <SelectItem value="ADHD">TDAH (Bullet Points)</SelectItem>
+                </SelectContent>
+              </Select>
+            </Control>
+
             <Control label="Prompt" className="px-3">
               <div className="flex flex-col items-end gap-1 text-right">
                 {configQuery.data.transcriptPostProcessingPrompt && (
