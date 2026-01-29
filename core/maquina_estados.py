@@ -261,6 +261,15 @@ class MaquinaEstados:
                 self._finalizar()
                 return
             
+            # Aguarda salvamento do arquivo (escrita em background)
+            if not self._capturador.aguardar_salvamento(timeout=10.0):
+                logger.error("Timeout aguardando salvamento do arquivo WAV")
+                self._salvar_audio_falha("Timeout ao salvar arquivo WAV")
+                self._transitar(Estado.ERROR)
+                notificar_erro("Falha ao salvar áudio")
+                self._finalizar()
+                return
+
             # TRANSCRIBING: Envia para Groq
             texto, erro = self._cliente_api.transcrever(self._caminho_audio)
             

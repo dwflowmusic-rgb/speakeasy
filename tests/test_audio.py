@@ -7,6 +7,17 @@ import os
 import tempfile
 import time
 import pytest
+import sys
+import unittest.mock as mock
+import numpy as np
+
+# Mock sounddevice BEFORE importing core
+mock_sd = mock.MagicMock()
+mock_sd.default.device = [0]
+mock_sd.query_devices.return_value = {'name': 'Mock Mic'}
+mock_sd.InputStream.return_value = mock.MagicMock()
+mock_sd.CallbackFlags = mock.MagicMock
+sys.modules['sounddevice'] = mock_sd
 
 # Importações serão feitas após instalação das dependências
 # from core.captura_audio import CapturadorAudio, limpar_arquivo_temporario
@@ -41,8 +52,23 @@ class TestCapturadorAudio:
         # Grava por 1 segundo
         time.sleep(1.0)
         
+        # Simula dados no buffer (já que o mock do sounddevice não gera audio real)
+        from core.captura_audio import TAXA_AMOSTRAGEM, CANAIS, DTYPE
+        chunk_size = 1024
+        # Simula ~1s de audio
+        num_chunks = int(TAXA_AMOSTRAGEM * 1.0 / chunk_size)
+        chunk = np.zeros((chunk_size, CANAIS), dtype=DTYPE)
+        for _ in range(num_chunks):
+            capturador._buffer.append(chunk)
+
+        # Simula inicio no passado
+        capturador._tempo_inicio = time.time() - 1.0
+
         caminho, duracao = capturador.parar_gravacao()
         
+        # Aguarda salvamento do arquivo (async)
+        capturador.aguardar_salvamento()
+
         # Verifica arquivo foi criado
         assert caminho is not None, "Caminho do arquivo não retornado"
         assert os.path.exists(caminho), f"Arquivo não existe: {caminho}"

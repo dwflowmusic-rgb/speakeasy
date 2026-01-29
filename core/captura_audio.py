@@ -9,6 +9,7 @@ Otimizado para baixo consumo de memória com buffer numpy dinâmico.
 import os
 import tempfile
 import time
+import threading
 from datetime import datetime
 from typing import Optional, Tuple
 
@@ -41,6 +42,8 @@ class CapturadorAudio:
         self._stream: Optional[sd.InputStream] = None
         self._tempo_inicio: Optional[float] = None
         self._dispositivo: Optional[int] = None
+        self._save_event = threading.Event()
+        self._save_event.set()  # Inicialmente liberado
         
     def _callback_audio(self, indata: np.ndarray, frames: int, 
                         time_info: dict, status: sd.CallbackFlags) -> None:
@@ -143,17 +146,14 @@ class CapturadorAudio:
             nome_arquivo = f"voiceflow_{timestamp}.wav"
             caminho_wav = os.path.join(tempfile.gettempdir(), nome_arquivo)
             
-            # Salva arquivo WAV
-            wavfile.write(caminho_wav, TAXA_AMOSTRAGEM, audio_completo)
-            
-            # Valida arquivo criado
-            tamanho = os.path.getsize(caminho_wav)
-            logger.info(f"Arquivo WAV salvo: {caminho_wav} ({tamanho} bytes)")
-            
-            if tamanho == 0:
-                logger.error("Arquivo WAV criado com tamanho zero")
-                os.remove(caminho_wav)
-                return None, 0.0
+            # Inicia salvamento em background
+            self._save_event.clear()
+            thread = threading.Thread(
+                target=self._salvar_wav_worker,
+                args=(caminho_wav, audio_completo),
+                daemon=True
+            )
+            thread.start()
             
             return caminho_wav, duracao
             
@@ -162,6 +162,41 @@ class CapturadorAudio:
             self._gravando = False
             self._buffer = []
             return None, 0.0
+
+    def _salvar_wav_worker(self, caminho_wav: str, audio_completo: np.ndarray) -> None:
+        """Worker thread para salvar arquivo WAV."""
+        try:
+            # Salva arquivo WAV
+            wavfile.write(caminho_wav, TAXA_AMOSTRAGEM, audio_completo)
+
+            # Valida arquivo criado
+            if os.path.exists(caminho_wav):
+                tamanho = os.path.getsize(caminho_wav)
+                logger.info(f"Arquivo WAV salvo: {caminho_wav} ({tamanho} bytes)")
+
+                if tamanho == 0:
+                    logger.error("Arquivo WAV criado com tamanho zero")
+                    # Nota: Não removemos o arquivo aqui para evitar race conditions
+                    # O consumidor detectará arquivo vazio
+            else:
+                logger.error(f"Arquivo WAV não foi criado: {caminho_wav}")
+
+        except Exception as e:
+            logger.error(f"Erro ao salvar arquivo em background: {e}")
+        finally:
+            self._save_event.set()
+
+    def aguardar_salvamento(self, timeout: Optional[float] = None) -> bool:
+        """
+        Aguarda finalização do salvamento do arquivo.
+
+        Args:
+            timeout: Tempo máximo de espera em segundos
+
+        Returns:
+            True se salvamento concluiu, False se houve timeout
+        """
+        return self._save_event.wait(timeout)
     
     @property
     def esta_gravando(self) -> bool:
