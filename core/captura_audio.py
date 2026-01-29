@@ -37,7 +37,8 @@ class CapturadorAudio:
     
     def __init__(self):
         self._gravando: bool = False
-        self._buffer: list = []
+        self._buffer: Optional[np.ndarray] = None
+        self._buffer_idx: int = 0
         self._stream: Optional[sd.InputStream] = None
         self._tempo_inicio: Optional[float] = None
         self._dispositivo: Optional[int] = None
@@ -56,8 +57,17 @@ class CapturadorAudio:
         if status:
             logger.warning(f"Status do stream de áudio: {status}")
         
-        # Adiciona chunk ao buffer (cópia para evitar referência)
-        self._buffer.append(indata.copy())
+        # Verifica e expande buffer se necessário
+        if self._buffer_idx + frames > self._buffer.shape[0]:
+            novo_tamanho = int(self._buffer.shape[0] * 1.5) + frames
+            # Reutiliza tipo e canais do buffer atual
+            novo_buffer = np.zeros((novo_tamanho, CANAIS), dtype=DTYPE)
+            novo_buffer[:self._buffer_idx] = self._buffer[:self._buffer_idx]
+            self._buffer = novo_buffer
+
+        # Copia dados para o buffer
+        self._buffer[self._buffer_idx:self._buffer_idx+frames] = indata
+        self._buffer_idx += frames
     
     def iniciar_gravacao(self) -> bool:
         """
@@ -71,8 +81,9 @@ class CapturadorAudio:
             return False
         
         try:
-            # Limpa buffer anterior
-            self._buffer = []
+            # Pre-aloca buffer (60s de áudio = ~1.9MB)
+            self._buffer = np.zeros((TAXA_AMOSTRAGEM * 60, CANAIS), dtype=DTYPE)
+            self._buffer_idx = 0
             
             # Obtém dispositivo padrão
             self._dispositivo = sd.default.device[0]
@@ -127,16 +138,18 @@ class CapturadorAudio:
             # Verifica duração mínima (evita acionamentos acidentais)
             if duracao < DURACAO_MINIMA_SEGUNDOS:
                 logger.info(f"Gravação descartada - muito curta ({duracao:.2f}s < {DURACAO_MINIMA_SEGUNDOS}s)")
-                self._buffer = []
+                self._buffer = None
                 return None, 0.0
             
-            # Concatena buffer em array único
-            if not self._buffer:
+            # Verifica se há dados gravados
+            if self._buffer is None or self._buffer_idx == 0:
                 logger.warning("Buffer de áudio vazio")
+                self._buffer = None
                 return None, 0.0
             
-            audio_completo = np.concatenate(self._buffer, axis=0)
-            self._buffer = []  # Libera memória
+            # Extrai áudio gravado (slice, sem cópia profunda se possível até escrita)
+            audio_completo = self._buffer[:self._buffer_idx]
+            self._buffer = None  # Libera memória
             
             # Gera nome único para arquivo temporário
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -160,7 +173,7 @@ class CapturadorAudio:
         except Exception as e:
             logger.error(f"Erro ao parar gravação: {e}")
             self._gravando = False
-            self._buffer = []
+            self._buffer = None
             return None, 0.0
     
     @property
