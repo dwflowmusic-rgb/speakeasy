@@ -85,6 +85,7 @@ class GerenciadorHistorico:
     def _inicializar_banco(self) -> None:
         """Cria tabelas se não existirem."""
         with sqlite3.connect(self._caminho_db) as conn:
+            conn.execute("PRAGMA journal_mode=WAL")
             conn.executescript(self.SCHEMA_SQL)
             conn.commit()
         logger.debug("Schema do banco de dados verificado/criado")
@@ -114,6 +115,7 @@ class GerenciadorHistorico:
         timestamp = datetime.now().isoformat()
         
         with sqlite3.connect(self._caminho_db) as conn:
+            conn.execute("PRAGMA synchronous = NORMAL")
             cursor = conn.execute(
                 """
                 INSERT INTO transcricoes 
