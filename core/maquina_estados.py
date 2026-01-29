@@ -10,6 +10,8 @@ from enum import Enum, auto
 from typing import Optional, Callable
 import threading
 
+from PySide6.QtCore import QTimer, QCoreApplication
+
 from core.logger import obter_logger
 from core.captura_audio import CapturadorAudio, limpar_arquivo_temporario
 from core.cliente_api import ClienteAPI
@@ -349,11 +351,20 @@ class MaquinaEstados:
                     
                     # AUTO-ENTER: Se habilitado, aguarda 800ms e pressiona Enter
                     if self._config.get('auto_enter', False):
-                        time.sleep(0.8)  # 800ms delay
-                        if simular_enter():
-                            logger.info("Auto-Enter executado com sucesso")
+                        def _do_enter():
+                            if simular_enter():
+                                logger.info("Auto-Enter executado com sucesso")
+                            else:
+                                logger.warning("Falha ao executar Auto-Enter")
+
+                        # Tenta usar timer do Qt se disponível
+                        app = QCoreApplication.instance()
+                        if app:
+                            QTimer.singleShot(800, app, _do_enter)
                         else:
-                            logger.warning("Falha ao executar Auto-Enter")
+                            # Fallback para testes sem loop Qt ou execução standalone
+                            time.sleep(0.8)
+                            _do_enter()
                 else:
                     notificar_sucesso("Transcrição no clipboard (falha ao colar)")
             else:
