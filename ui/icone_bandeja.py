@@ -52,7 +52,6 @@ class IconeBandeja:
         self._callback_configuracoes: Optional[Callable] = None
         self._callback_autostart: Optional[Callable[[bool], None]] = None
         self._callback_auto_enter: Optional[Callable[[bool], None]] = None
-        self._callback_auto_enter: Optional[Callable[[bool], None]] = None
         self._callback_retry: Optional[Callable] = None
         self._callback_sair: Optional[Callable] = None
         
@@ -162,9 +161,6 @@ class IconeBandeja:
         self._callback_historico = callback
         self._acao_historico.setEnabled(True)
     
-    def registrar_callback_configuracoes(self, callback: Callable) -> None:
-        """Registra callback para quando usuário clicar em Configurações."""
-        self._callback_configuracoes = callback
     def registrar_callback_configuracoes(self, callback: Callable) -> None:
         """Registra callback para quando usuário clicar em Configurações."""
         self._callback_configuracoes = callback

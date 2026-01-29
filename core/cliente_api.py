@@ -157,6 +157,29 @@ class ClienteAPI:
         
         return None, "Falha na transcrição após múltiplas tentativas - verifique conexão"
     
+    def atualizar_configuracao(self, config: dict) -> None:
+        """
+        Atualiza configurações e re-inicializa clientes.
+
+        Args:
+            config: Nova configuração
+        """
+        self._config = config
+
+        # Re-inicializa cliente Groq
+        self._cliente_groq = Groq(
+            api_key=config['transcription']['api_key']
+        )
+        self._modelo_groq = config['transcription']['model']
+
+        # Re-inicializa cliente Gemini
+        self._cliente_gemini = genai.Client(
+            api_key=config['polishing']['api_key']
+        )
+        self._modelo_gemini = config['polishing']['model']
+
+        logger.info(f"ClienteAPI reconfigurado - Groq: {self._modelo_groq}, Gemini: {self._modelo_gemini}")
+
     def polir(self, texto_bruto: str) -> Tuple[str, bool]:
         """
         Poli texto transcrito usando Google Gemini.

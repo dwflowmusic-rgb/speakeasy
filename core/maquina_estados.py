@@ -134,6 +134,17 @@ class MaquinaEstados:
         """
         self._callback_nova_transcricao = callback
     
+    def atualizar_configuracao(self, config: dict) -> None:
+        """
+        Atualiza configuração da máquina e de seus componentes.
+
+        Args:
+            config: Nova configuração
+        """
+        self._config = config
+        self._cliente_api.atualizar_configuracao(config)
+        logger.info("Máquina de estados: configuração atualizada")
+
     def _transitar(self, novo_estado: Estado) -> None:
         """
         Executa transição de estado com logging.

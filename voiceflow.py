@@ -34,6 +34,7 @@ from core.input_hook import KeyboardHook
 from ui.icone_bandeja import IconeBandeja
 from ui.janela_historico import JanelaHistorico
 from ui.janela_retry import JanelaRetry
+from ui.janela_configuracoes import JanelaConfiguracoes
 from ui.status_widget import StatusWidget, StatusType
 import core.autostart as autostart
 
@@ -199,6 +200,7 @@ class VoiceFlowApp:
         # Configura callbacks
         self._bandeja.registrar_callback_sair(self._encerrar)
         self._bandeja.registrar_callback_historico(self._abrir_historico)
+        self._bandeja.registrar_callback_configuracoes(self._abrir_configuracoes)
         self._bandeja.registrar_callback_retry(self._abrir_janela_retry)
         self._bandeja.registrar_callback_autostart(self._toggle_autostart)
         self._bandeja.registrar_callback_auto_enter(self._toggle_auto_enter)
@@ -212,6 +214,7 @@ class VoiceFlowApp:
         # Janela de histórico (única instância, reutilizada)
         self._janela_historico: Optional[JanelaHistorico] = None
         self._janela_retry: Optional[JanelaRetry] = None
+        self._janela_configuracoes: Optional[JanelaConfiguracoes] = None
         
         # Widget de status flutuante (OSD)
         self._status_widget = StatusWidget()
@@ -360,6 +363,33 @@ class VoiceFlowApp:
         self._janela_retry.show()
         self._janela_retry.raise_()
         self._janela_retry.activateWindow()
+
+    def _abrir_configuracoes(self) -> None:
+        """Abre janela de configurações."""
+        self._logger.info("Abrindo janela de configurações")
+        # Cria nova instância para garantir estado fresco
+        self._janela_configuracoes = JanelaConfiguracoes(self._config)
+        self._janela_configuracoes.configuracao_salva.connect(self._on_configuracao_salva)
+
+        self._janela_configuracoes.show()
+        self._janela_configuracoes.raise_()
+        self._janela_configuracoes.activateWindow()
+
+    @Slot(dict)
+    def _on_configuracao_salva(self, novo_config: dict) -> None:
+        """Callback para quando configurações são salvas."""
+        self._logger.info("Aplicando novas configurações...")
+
+        # Atualiza configuração principal
+        self._config.update(novo_config)
+
+        # Propaga para máquina de estados (e clientes API)
+        self._maquina.atualizar_configuracao(self._config)
+
+        # Atualiza UI (Tray Icon)
+        self._bandeja.definir_estado_auto_enter(self._config.get('auto_enter', False))
+
+        self._exibir_notificacao_qt("Configurações", "Configurações atualizadas com sucesso!")
 
     def _toggle_autostart(self, ativar: bool) -> None:
         """Alterna inicialização automática."""
