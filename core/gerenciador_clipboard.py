@@ -7,6 +7,8 @@ Garante thread-safety e validação de escrita.
 """
 
 from typing import Optional, Callable
+import threading
+import time
 
 from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import QTimer
@@ -31,19 +33,8 @@ def registrar_callback_notificacao(callback: Callable[[str, str], None]) -> None
     logger.info("Callback de notificação registrado")
 
 
-def copiar_para_clipboard(texto: str) -> bool:
-    """
-    Copia texto para clipboard usando Win32 API direta.
-    
-    Usa ctypes para chamar OpenClipboard, EmptyClipboard, SetClipboardData
-    diretamente, bypassing QClipboard que pode ser bloqueado por outras apps.
-    
-    Args:
-        texto: Texto a ser copiado
-        
-    Returns:
-        True se cópia foi bem-sucedida
-    """
+def _copiar_impl(texto: str) -> bool:
+    """Implementação interna da cópia via Win32 API."""
     import ctypes
     from ctypes import wintypes, c_size_t, c_void_p, c_wchar_p
     
@@ -139,6 +130,46 @@ def copiar_para_clipboard(texto: str) -> bool:
     except Exception as e:
         logger.error(f"Erro ao copiar para clipboard: {e}")
         return False
+
+
+def copiar_para_clipboard(texto: str) -> bool:
+    """
+    Copia texto para clipboard usando Win32 API direta.
+
+    Se chamado da thread principal, executa a operação em uma thread secundária
+    para evitar congelamento da UI durante os retries (sleep), mas aguarda
+    a conclusão processando eventos da UI (QApplication.processEvents).
+
+    Args:
+        texto: Texto a ser copiado
+
+    Returns:
+        True se cópia foi bem-sucedida
+    """
+    app = QApplication.instance()
+
+    # Se estiver na thread principal e temos uma QApplication, usamos thread dedicada
+    if app and threading.current_thread() is threading.main_thread():
+        result_container = []
+
+        def worker():
+            res = _copiar_impl(texto)
+            result_container.append(res)
+
+        t = threading.Thread(target=worker, daemon=True)
+        t.start()
+
+        # Aguarda thread terminar mantendo a UI responsiva
+        while t.is_alive():
+            app.processEvents()
+            time.sleep(0.01)  # Yield para CPU
+
+        t.join()  # Garante que terminou
+        return result_container[0] if result_container else False
+
+    else:
+        # Se já estiver em background ou sem app, roda direto
+        return _copiar_impl(texto)
 
 
 def exibir_notificacao(titulo: str, mensagem: str, duracao: int = 3) -> bool:
