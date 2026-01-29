@@ -7,6 +7,7 @@ Implementa timeout, retry com backoff exponencial e fallback gracioso.
 """
 
 import time
+import threading
 from typing import Optional, Tuple
 
 from groq import Groq
@@ -75,12 +76,13 @@ class ClienteAPI:
         
         logger.info(f"ClienteAPI inicializado - Groq: {self._modelo_groq}, Gemini: {self._modelo_gemini}")
     
-    def transcrever(self, caminho_audio: str) -> Tuple[Optional[str], Optional[str]]:
+    def transcrever(self, caminho_audio: str, stop_event: Optional[threading.Event] = None) -> Tuple[Optional[str], Optional[str]]:
         """
         Transcreve arquivo de áudio usando Groq Whisper.
         
         Args:
             caminho_audio: Caminho do arquivo WAV
+            stop_event: Evento opcional para cancelar operação durante espera
             
         Returns:
             Tupla (texto_transcrito, mensagem_erro).
@@ -153,16 +155,23 @@ class ClienteAPI:
                 if tentativa < MAX_TENTATIVAS - 1:
                     tempo_espera = BACKOFF_BASE ** (tentativa + 1)
                     logger.info(f"Aguardando {tempo_espera}s antes de nova tentativa...")
-                    time.sleep(tempo_espera)
+
+                    if stop_event:
+                        if stop_event.wait(tempo_espera):
+                            logger.info("Operação cancelada durante espera.")
+                            return None, "Operação cancelada pelo usuário"
+                    else:
+                        time.sleep(tempo_espera)
         
         return None, "Falha na transcrição após múltiplas tentativas - verifique conexão"
     
-    def polir(self, texto_bruto: str) -> Tuple[str, bool]:
+    def polir(self, texto_bruto: str, stop_event: Optional[threading.Event] = None) -> Tuple[str, bool]:
         """
         Poli texto transcrito usando Google Gemini.
         
         Args:
             texto_bruto: Transcrição bruta do áudio
+            stop_event: Evento opcional para cancelar operação durante espera
             
         Returns:
             Tupla (texto_polido, foi_polido).
@@ -211,7 +220,13 @@ class ClienteAPI:
                 if tentativa < MAX_TENTATIVAS - 1:
                     tempo_espera = BACKOFF_BASE ** (tentativa + 1)
                     logger.info(f"Aguardando {tempo_espera}s antes de nova tentativa...")
-                    time.sleep(tempo_espera)
+
+                    if stop_event:
+                        if stop_event.wait(tempo_espera):
+                            logger.info("Operação cancelada durante espera.")
+                            return texto_bruto, False
+                    else:
+                        time.sleep(tempo_espera)
         
         # Fallback: retorna texto bruto
         logger.warning("Polimento falhou - usando texto bruto como fallback")
