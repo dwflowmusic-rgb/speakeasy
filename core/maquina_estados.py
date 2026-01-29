@@ -71,6 +71,9 @@ class MaquinaEstados:
         self._cliente_api = ClienteAPI(config)
         self._historico = GerenciadorHistorico()
         
+        # Evento para cancelar operações de API
+        self._evento_stop = threading.Event()
+
         # Controle de foco (Fase 3)
         self._janela_inicio: int = 0
         
@@ -175,6 +178,7 @@ class MaquinaEstados:
         
         # Tenta iniciar captura
         if self._capturador.iniciar_gravacao():
+            self._evento_stop.clear()
             self._transitar(Estado.RECORDING)
             return True
         else:
@@ -198,6 +202,7 @@ class MaquinaEstados:
         
         # Seta flag para abortar processamento
         self._cancelado = True
+        self._evento_stop.set()
         
         # Se estiver gravando, para a gravação
         if self._estado == Estado.RECORDING:
@@ -251,7 +256,10 @@ class MaquinaEstados:
                 return
             
             # TRANSCRIBING: Envia para Groq
-            texto, erro = self._cliente_api.transcrever(self._caminho_audio)
+            texto, erro = self._cliente_api.transcrever(
+                self._caminho_audio,
+                stop_event=self._evento_stop
+            )
             
             # Verifica cancelamento após transcrição (antes de polimento)
             if self._cancelado:
@@ -272,7 +280,10 @@ class MaquinaEstados:
             
             # POLISHING: Envia para Gemini
             self._transitar(Estado.POLISHING)
-            texto_polido, foi_polido = self._cliente_api.polir(texto)
+            texto_polido, foi_polido = self._cliente_api.polir(
+                texto,
+                stop_event=self._evento_stop
+            )
             self._texto_polido = texto_polido
             
             if not foi_polido:
@@ -427,6 +438,9 @@ class MaquinaEstados:
         self._caminho_audio = caminho_wav
         self._duracao_audio = 0.0 
         
+        # Reset evento de stop
+        self._evento_stop.clear()
+
         # Inicia processamento
         self._transitar(Estado.TRANSCRIBING)
         thread = threading.Thread(target=self._processar_audio, daemon=True)
