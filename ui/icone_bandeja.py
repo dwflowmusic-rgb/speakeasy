@@ -82,9 +82,8 @@ class IconeBandeja:
         
         self._menu.addSeparator()
         
-        # Ação: Ver Histórico (Fase 2 - desabilitado por enquanto)
+        # Ação: Ver Histórico
         self._acao_historico = QAction("📋 Ver Histórico", self._menu)
-        self._acao_historico.setEnabled(False)  # Habilitado na Fase 2
         self._acao_historico.triggered.connect(self._on_historico)
         self._menu.addAction(self._acao_historico)
 
@@ -162,9 +161,6 @@ class IconeBandeja:
         self._callback_historico = callback
         self._acao_historico.setEnabled(True)
     
-    def registrar_callback_configuracoes(self, callback: Callable) -> None:
-        """Registra callback para quando usuário clicar em Configurações."""
-        self._callback_configuracoes = callback
     def registrar_callback_configuracoes(self, callback: Callable) -> None:
         """Registra callback para quando usuário clicar em Configurações."""
         self._callback_configuracoes = callback
