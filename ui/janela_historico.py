@@ -9,7 +9,7 @@ from typing import Optional
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLineEdit, 
     QListWidget, QListWidgetItem, QTextEdit, QPushButton,
-    QLabel, QSplitter, QWidget, QMessageBox
+    QLabel, QSplitter, QWidget, QMessageBox, QStackedWidget
 )
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont
@@ -61,6 +61,30 @@ class JanelaHistorico(QDialog):
         self._lista = QListWidget()
         self._lista.setAlternatingRowColors(True)
         
+        # Empty State (Widget vazio)
+        self._widget_vazio = QWidget()
+        layout_vazio = QVBoxLayout(self._widget_vazio)
+
+        lbl_icone_vazio = QLabel("📭")
+        lbl_icone_vazio.setAlignment(Qt.AlignCenter)
+        font_emoji = QFont()
+        font_emoji.setPointSize(48)
+        lbl_icone_vazio.setFont(font_emoji)
+
+        self._lbl_msg_vazio = QLabel("Nenhuma transcrição encontrada.\nSegure CapsLock para gravar.")
+        self._lbl_msg_vazio.setAlignment(Qt.AlignCenter)
+        self._lbl_msg_vazio.setStyleSheet("color: gray; font-size: 14px;")
+
+        layout_vazio.addStretch()
+        layout_vazio.addWidget(lbl_icone_vazio)
+        layout_vazio.addWidget(self._lbl_msg_vazio)
+        layout_vazio.addStretch()
+
+        # Stack para alternar entre lista e vazio
+        self._stack_lista = QStackedWidget()
+        self._stack_lista.addWidget(self._lista)
+        self._stack_lista.addWidget(self._widget_vazio)
+
         # Contador
         self._lbl_contador = QLabel("0 transcrições")
         
@@ -102,7 +126,7 @@ class JanelaHistorico(QDialog):
         layout_lista = QVBoxLayout(widget_lista)
         layout_lista.setContentsMargins(0, 0, 0, 0)
         layout_lista.addLayout(layout_busca)
-        layout_lista.addWidget(self._lista)
+        layout_lista.addWidget(self._stack_lista)
         layout_lista.addWidget(self._lbl_contador)
         
         # Painel direito (detalhes)
@@ -178,6 +202,17 @@ class JanelaHistorico(QDialog):
         
         total = self._historico.contar()
         exibidos = len(registros)
+
+        # Gerencia Empty State
+        if exibidos == 0:
+            self._stack_lista.setCurrentWidget(self._widget_vazio)
+            if termo_busca:
+                self._lbl_msg_vazio.setText(f"Nenhum resultado para '{termo_busca}'")
+            else:
+                self._lbl_msg_vazio.setText("Nenhuma transcrição encontrada.\nSegure CapsLock para gravar.")
+        else:
+            self._stack_lista.setCurrentWidget(self._lista)
+
         self._lbl_contador.setText(
             f"{exibidos} de {total} transcrições" if termo_busca 
             else f"{total} transcrições"
