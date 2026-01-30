@@ -26,7 +26,8 @@ user32 = ctypes.windll.user32
 VK_CAPITAL = 0x14
 
 # Constantes de configuração
-INTERVALO_POLLING_MS = 20  # 50 verificações por segundo
+INTERVALO_POLLING_IDLE_MS = 100  # 10Hz quando ocioso
+INTERVALO_POLLING_ACTIVE_MS = 20  # 50Hz quando interagindo
 THRESHOLD_HOLD_MS_PADRAO = 500  # 500ms para considerar "hold intencional"
 THRESHOLD_HOLD_MS_MIN = 200
 THRESHOLD_HOLD_MS_MAX = 1500
@@ -87,7 +88,7 @@ class DetectorCapsLock(QObject):
         
         logger.info(
             f"DetectorCapsLock inicializado - threshold: {self._threshold_ms}ms, "
-            f"polling: {INTERVALO_POLLING_MS}ms"
+            f"polling idle: {INTERVALO_POLLING_IDLE_MS}ms"
         )
     
     @property
@@ -117,7 +118,7 @@ class DetectorCapsLock(QObject):
         
         self._timer = QTimer(self)
         self._timer.timeout.connect(self._verificar_estado_tecla)
-        self._timer.start(INTERVALO_POLLING_MS)
+        self._timer.start(INTERVALO_POLLING_IDLE_MS)
         
         self._estado = EstadoDetector.AGUARDANDO
         self._contador_hold_ms = 0
@@ -151,26 +152,31 @@ class DetectorCapsLock(QObject):
     
     def _verificar_estado_tecla(self) -> None:
         """
-        Callback do timer - verifica estado da tecla a cada 20ms.
+        Callback do timer - verifica estado da tecla.
         
-        Implementa máquina de estados:
-        - AGUARDANDO: espera press inicial
-        - CONTANDO_HOLD: conta tempo de hold até threshold
-        - GRAVANDO: monitora release para parar
+        Implementa máquina de estados com polling dinâmico:
+        - AGUARDANDO: espera press inicial (polling lento 100ms)
+        - CONTANDO_HOLD: conta tempo de hold (polling rápido 20ms)
+        - GRAVANDO: monitora release para parar (polling rápido 20ms)
         """
         tecla_pressionada = self._tecla_pressionada()
+        intervalo_atual = self._timer.interval()
         
         if self._estado == EstadoDetector.AGUARDANDO:
             if tecla_pressionada:
                 # Transição: AGUARDANDO → CONTANDO_HOLD
                 self._estado = EstadoDetector.CONTANDO_HOLD
-                self._contador_hold_ms = INTERVALO_POLLING_MS
-                logger.debug(f"CapsLock pressionada - iniciando contagem de hold")
+                self._contador_hold_ms = intervalo_atual
+
+                # Aumenta frequência de polling para precisão durante interação
+                self._timer.setInterval(INTERVALO_POLLING_ACTIVE_MS)
+
+                logger.debug(f"CapsLock pressionada - iniciando contagem de hold (polling acelerado)")
         
         elif self._estado == EstadoDetector.CONTANDO_HOLD:
             if tecla_pressionada:
                 # Continua contando
-                self._contador_hold_ms += INTERVALO_POLLING_MS
+                self._contador_hold_ms += intervalo_atual
                 
                 if self._contador_hold_ms >= self._threshold_ms:
                     # Threshold atingido!
@@ -187,6 +193,8 @@ class DetectorCapsLock(QObject):
                         # Falha ao iniciar (ex: microfone indisponível)
                         logger.warning("Falha ao iniciar gravação - retornando para AGUARDANDO")
                         self._estado = EstadoDetector.AGUARDANDO
+                        # Retorna para polling lento
+                        self._timer.setInterval(INTERVALO_POLLING_IDLE_MS)
             else:
                 # Tecla solta antes do threshold - toque acidental
                 logger.debug(
@@ -195,9 +203,11 @@ class DetectorCapsLock(QObject):
                 )
                 self._estado = EstadoDetector.AGUARDANDO
                 self._contador_hold_ms = 0
+                # Retorna para polling lento
+                self._timer.setInterval(INTERVALO_POLLING_IDLE_MS)
         
         elif self._estado == EstadoDetector.GRAVANDO:
-            self._contador_gravacao_ms += INTERVALO_POLLING_MS
+            self._contador_gravacao_ms += intervalo_atual
             
             if not tecla_pressionada:
                 # Tecla solta - parar gravação
@@ -208,6 +218,8 @@ class DetectorCapsLock(QObject):
                 self._callback_parar()
                 self._estado = EstadoDetector.AGUARDANDO
                 self._contador_gravacao_ms = 0
+                # Retorna para polling lento
+                self._timer.setInterval(INTERVALO_POLLING_IDLE_MS)
             
             elif self._contador_gravacao_ms >= DURACAO_MAXIMA_GRAVACAO_MS:
                 # Proteção: gravação excessivamente longa
@@ -218,3 +230,5 @@ class DetectorCapsLock(QObject):
                 self._callback_parar()
                 self._estado = EstadoDetector.AGUARDANDO
                 self._contador_gravacao_ms = 0
+                # Retorna para polling lento
+                self._timer.setInterval(INTERVALO_POLLING_IDLE_MS)
