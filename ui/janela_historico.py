@@ -9,7 +9,7 @@ from typing import Optional
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLineEdit, 
     QListWidget, QListWidgetItem, QTextEdit, QPushButton,
-    QLabel, QSplitter, QWidget, QMessageBox
+    QLabel, QSplitter, QWidget, QMessageBox, QStackedWidget
 )
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont
@@ -61,6 +61,34 @@ class JanelaHistorico(QDialog):
         self._lista = QListWidget()
         self._lista.setAlternatingRowColors(True)
         
+        # Empty State (Estado vazio)
+        self._widget_vazio = QWidget()
+        layout_vazio = QVBoxLayout(self._widget_vazio)
+        layout_vazio.setAlignment(Qt.AlignCenter)
+
+        lbl_icone_vazio = QLabel("📝")
+        lbl_icone_vazio.setFont(QFont("Segoe UI Emoji", 48))
+        lbl_icone_vazio.setAlignment(Qt.AlignCenter)
+
+        lbl_texto_vazio = QLabel("Nenhuma transcrição encontrada")
+        lbl_texto_vazio.setFont(QFont("Segoe UI", 12, QFont.Bold))
+        lbl_texto_vazio.setAlignment(Qt.AlignCenter)
+
+        lbl_subtexto_vazio = QLabel("Pressione CapsLock para começar a gravar.")
+        lbl_subtexto_vazio.setStyleSheet("color: gray;")
+        lbl_subtexto_vazio.setAlignment(Qt.AlignCenter)
+
+        layout_vazio.addStretch()
+        layout_vazio.addWidget(lbl_icone_vazio)
+        layout_vazio.addWidget(lbl_texto_vazio)
+        layout_vazio.addWidget(lbl_subtexto_vazio)
+        layout_vazio.addStretch()
+
+        # Stacked Widget (Alterna entre lista e vazio)
+        self._stacked_widget = QStackedWidget()
+        self._stacked_widget.addWidget(self._lista)      # Index 0
+        self._stacked_widget.addWidget(self._widget_vazio) # Index 1
+
         # Contador
         self._lbl_contador = QLabel("0 transcrições")
         
@@ -102,7 +130,7 @@ class JanelaHistorico(QDialog):
         layout_lista = QVBoxLayout(widget_lista)
         layout_lista.setContentsMargins(0, 0, 0, 0)
         layout_lista.addLayout(layout_busca)
-        layout_lista.addWidget(self._lista)
+        layout_lista.addWidget(self._stacked_widget)
         layout_lista.addWidget(self._lbl_contador)
         
         # Painel direito (detalhes)
@@ -162,6 +190,12 @@ class JanelaHistorico(QDialog):
         else:
             registros = self._historico.listar(limite=100)
         
+        # Alterna visualização (Lista vs Vazio)
+        if not registros:
+            self._stacked_widget.setCurrentIndex(1)  # Mostra vazio
+        else:
+            self._stacked_widget.setCurrentIndex(0)  # Mostra lista
+
         for registro in registros:
             item = QListWidgetItem()
             item.setData(Qt.UserRole, registro.id)
