@@ -9,7 +9,7 @@ from typing import Optional
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLineEdit, 
     QListWidget, QListWidgetItem, QTextEdit, QPushButton,
-    QLabel, QSplitter, QWidget, QMessageBox
+    QLabel, QSplitter, QWidget, QMessageBox, QStackedWidget
 )
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont
@@ -60,6 +60,9 @@ class JanelaHistorico(QDialog):
         # Lista de transcrições
         self._lista = QListWidget()
         self._lista.setAlternatingRowColors(True)
+
+        # Empty State
+        self._empty_state = self._criar_empty_state()
         
         # Contador
         self._lbl_contador = QLabel("0 transcrições")
@@ -80,15 +83,43 @@ class JanelaHistorico(QDialog):
         # Botões
         self._btn_copiar = QPushButton("📋 Copiar para Clipboard")
         self._btn_copiar.setEnabled(False)
+        self._btn_copiar.setToolTip("Copia o texto polido para a área de transferência")
         
         self._btn_excluir = QPushButton("🗑️ Excluir")
         self._btn_excluir.setEnabled(False)
         self._btn_excluir.setStyleSheet("color: #c9302c;")
+        self._btn_excluir.setToolTip("Remove permanentemente esta transcrição")
         
         self._btn_limpar_tudo = QPushButton("🧹 Limpar Histórico")
         self._btn_limpar_tudo.setStyleSheet("color: #c9302c; font-weight: bold;")
+        self._btn_limpar_tudo.setToolTip("Remove TODAS as transcrições do histórico")
         
         self._btn_fechar = QPushButton("Fechar")
+        self._btn_fechar.setToolTip("Fecha a janela (Esc)")
+
+    def _criar_empty_state(self) -> QWidget:
+        """Cria widget para exibir quando não há dados."""
+        widget = QWidget()
+        layout = QVBoxLayout(widget)
+        layout.setAlignment(Qt.AlignCenter)
+
+        lbl_icon = QLabel("📝")
+        lbl_icon.setStyleSheet("font-size: 48px;")
+        lbl_icon.setAlignment(Qt.AlignCenter)
+
+        lbl_msg = QLabel("Nenhuma transcrição encontrada")
+        lbl_msg.setStyleSheet("font-size: 14px; font-weight: bold; color: #555;")
+        lbl_msg.setAlignment(Qt.AlignCenter)
+
+        lbl_hint = QLabel("Segure CapsLock para começar a gravar suas ideias.")
+        lbl_hint.setStyleSheet("color: #777;")
+        lbl_hint.setAlignment(Qt.AlignCenter)
+
+        layout.addWidget(lbl_icon)
+        layout.addWidget(lbl_msg)
+        layout.addWidget(lbl_hint)
+
+        return widget
     
     def _configurar_layout(self) -> None:
         """Configura layout dos widgets."""
@@ -97,12 +128,17 @@ class JanelaHistorico(QDialog):
         layout_busca.addWidget(self._lbl_busca)
         layout_busca.addWidget(self._txt_busca)
         
+        # Stack para lista/empty state
+        self._stack = QStackedWidget()
+        self._stack.addWidget(self._lista)      # Index 0
+        self._stack.addWidget(self._empty_state) # Index 1
+
         # Painel esquerdo (lista)
         widget_lista = QWidget()
         layout_lista = QVBoxLayout(widget_lista)
         layout_lista.setContentsMargins(0, 0, 0, 0)
         layout_lista.addLayout(layout_busca)
-        layout_lista.addWidget(self._lista)
+        layout_lista.addWidget(self._stack)
         layout_lista.addWidget(self._lbl_contador)
         
         # Painel direito (detalhes)
@@ -183,6 +219,12 @@ class JanelaHistorico(QDialog):
             else f"{total} transcrições"
         )
         
+        # Atualiza visibilidade do empty state
+        if exibidos == 0:
+            self._stack.setCurrentIndex(1) # Mostra empty state
+        else:
+            self._stack.setCurrentIndex(0) # Mostra lista
+
         logger.debug(f"Lista carregada: {exibidos} itens")
     
     def _on_busca_alterada(self, texto: str) -> None:
